@@ -1,0 +1,4 @@
+.ast_nodes/__pycache__/*
+.lexer/__pycache__/*
+.parser/__pycache__/*
+.translator/__pycache__/*
