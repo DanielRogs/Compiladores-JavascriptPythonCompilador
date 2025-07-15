@@ -68,7 +68,7 @@ class Transpiler:
             is_right_string = isinstance(node.right, Literal) and isinstance(node.right.value, str)
             
             if is_left_string or is_right_string:
-                 return f"(str({left}) + str({right}))"
+                return f"(str({left}) + str({right}))"
         
         return f"({left} {node.op} {right})"
 
