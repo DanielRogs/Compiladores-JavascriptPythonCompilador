@@ -52,12 +52,25 @@ class Transpiler:
         left = self.visit(node.left)
         right = self.visit(node.right)
 
+        op_map = {
+            '===': '==',  # JS strict equals -> Python equals
+            '!==': '!=',  # JS strict not equals -> Python not equals
+            '==':  '==',  # JS loose equals -> Python equals (semântica diferente!)
+            '!=':  '!='   # JS loose not equals -> Python not equals (semântica diferente!)
+        }
+        
+        if node.op in op_map:
+            py_op = op_map[node.op]
+            return f"({left} {py_op} {right})"
+
         if node.op == '+':
-            if self.is_string(node.left) and self.is_string(node.right):
-                return f"{left} + {right}"
-            elif self.is_string(node.left) or self.is_string(node.right):
-                return f"str({left}) + str({right})"
-        return f"{left} {node.op} {right}"
+            is_left_string = isinstance(node.left, Literal) and isinstance(node.left.value, str)
+            is_right_string = isinstance(node.right, Literal) and isinstance(node.right.value, str)
+            
+            if is_left_string or is_right_string:
+                return f"(str({left}) + str({right}))"
+        
+        return f"({left} {node.op} {right})"
 
 
     def is_string(self, node):
@@ -123,15 +136,9 @@ class Transpiler:
         return f"lambda {params}: {self.visit(node.expression)}"
 
     def visit_ForEachStatement(self, node):
-        iterable_code = self.visit(node.iterable)
+        iterable = self.visit(node.iterable)
+        body = self.visit(node.body)
 
-        if node.kind == 'in':
-            loop = f"for {node.var} in {iterable_code}:"
-        else:  # 'of'
-            loop = f"for {node.var} in {iterable_code}:"
+        loop_header = f"for {node.var} in {iterable}:"
 
-        body_lines = []
-        for stmt in node.body.statements:
-            body_lines.append("    " + self.visit(stmt))
-
-        return loop + "\n" + "\n".join(body_lines)
+        return f"{loop_header}\n{self._indent(body)}"

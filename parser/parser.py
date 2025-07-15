@@ -232,7 +232,7 @@ class Parser:
       # Suporte para operadores relacionais
       node = self.parse_add_sub()
 
-      while self.current_token() and self.current_token().type in ('GT', 'LT', 'GTE', 'LTE', 'EQ', 'NEQ'):
+      while self.current_token() and self.current_token().type in ('GT', 'LT', 'GTE', 'LTE', 'EQ', 'NEQ', 'EQ_STRICT', 'NEQ_STRICT'):
           op_token = self.eat(self.current_token().type)
           right = self.parse_add_sub()
           node = BinaryOp(node, op_token.value, right)

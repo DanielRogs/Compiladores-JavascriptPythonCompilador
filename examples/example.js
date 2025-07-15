@@ -34,3 +34,11 @@ var dobro = (n) => {
     console.log("Calculando o dobro...");
     return n * 2;
 };
+
+function eqStrict(a, b) {
+  return a === b;
+}
+
+function neqStrict(a, b) {
+  return a !== b;
+}
