@@ -3,7 +3,7 @@ from ast_nodes.nodes import (
     Program, VariableDeclaration, Literal, Identifier,
     BinaryOp, ConsoleLog, IfStatement, WhileStatement,
     Block, FunctionDeclaration, ReturnStatement, FunctionCall, 
-    ArrayLiteral, ObjectLiteral, MemberAccess
+    ArrayLiteral, ObjectLiteral, MemberAccess, LambdaFunction
 )
 
 class Parser:
@@ -56,12 +56,37 @@ class Parser:
             raise SyntaxError(f"Token inesperado: {token}")
 
     def parse_variable_declaration(self):
-        self.eat('VAR')
-        ident = self.eat('IDENTIFIER')
-        self.eat('OP_ASSIGN')
-        value = self.parse_expression()
-        self.eat('SEMICOLON')
-        return VariableDeclaration(ident.value, value)
+            self.eat('VAR')
+            ident = self.eat('IDENTIFIER')
+            self.eat('OP_ASSIGN')
+
+            # Tenta arrow function
+            if self.current_token().type == 'LPAREN':
+                lookahead_pos = self.pos
+                try:
+                    # faz lookahead de parênteses até o RPAREN
+                    self.eat('LPAREN')
+                    while self.current_token().type != 'RPAREN':
+                        self.eat(self.current_token().type)
+                    self.eat('RPAREN')
+
+                    # se vier ARROW, voltamos e chamamos o parser da arrow
+                    if self.current_token().type == 'ARROW':
+                        self.pos = lookahead_pos
+                        func = self.parse_arrow_function()
+                        # **consome o ; se houver**
+                        if self.current_token() and self.current_token().type == 'SEMICOLON':
+                            self.eat('SEMICOLON')
+                        return VariableDeclaration(ident.value, func)
+                    else:
+                        self.pos = lookahead_pos
+                except:
+                    self.pos = lookahead_pos
+
+            # Caso normal (não-arrow) ou arrow sem bloco
+            value = self.parse_expression()
+            self.eat('SEMICOLON')
+            return VariableDeclaration(ident.value, value)
 
     def parse_assignment(self):
         ident = self.eat('IDENTIFIER')
@@ -226,6 +251,25 @@ class Parser:
             right = self.parse_primary()
             node = BinaryOp(node, op, right)
         return node
+
+    def parse_arrow_function(self):
+        self.eat('LPAREN')
+        params = []
+        if self.current_token().type != 'RPAREN':
+            params.append(self.eat('IDENTIFIER').value)
+            while self.current_token().type == 'COMMA':
+                self.eat('COMMA')
+                params.append(self.eat('IDENTIFIER').value)
+        self.eat('RPAREN')
+        self.eat('ARROW')
+
+        if self.current_token().type == 'LBRACE':
+            # Arrow function com bloco: vira função normal
+            body = self.parse_block()
+            return FunctionDeclaration(None, params, body)
+        else:
+            expr = self.parse_expression()
+            return LambdaFunction(params, expr)
 
     def parse_primary(self):
         token = self.current_token()

@@ -69,3 +69,7 @@ class MemberAccess:
         self.key = key
         self.is_dot = is_dot  # true: obj.key / false: obj["key"]
 
+class LambdaFunction:
+    def __init__(self, params, expression):
+        self.params = params
+        self.expression = expression

@@ -1,4 +1,4 @@
-from ast_nodes.nodes import Literal
+from ast_nodes.nodes import Literal, LambdaFunction, FunctionDeclaration
 
 
 class Transpiler:
@@ -7,6 +7,10 @@ class Transpiler:
 
     def transpile(self):
         return self.visit(self.ast)
+
+    def indent(self, code, level=1):
+        indent_str = '    ' * level  # 4 espaços por nível
+        return '\n'.join(indent_str + line if line.strip() else line for line in code.split('\n'))
 
     def visit(self, node):
         method_name = 'visit_' + node.__class__.__name__
@@ -20,8 +24,18 @@ class Transpiler:
         return "\n".join([self.visit(s) for s in node.statements])
 
     def visit_VariableDeclaration(self, node):
-        val = self.visit(node.value)
-        return f"{node.name} = {val}"
+        if isinstance(node.value, LambdaFunction):
+            return f"{node.name} = {self.visit(node.value)}"
+
+        elif isinstance(node.value, FunctionDeclaration) and node.value.name is None:
+            # Função anônima: define inline como função nomeada
+            params = ', '.join(node.value.params)
+            body = self.visit(node.value.body)
+            return f"def {node.name}({params}):\n{self.indent(body)}"
+
+        else:
+            return f"{node.name} = {self.visit(node.value)}"
+
 
     def visit_Literal(self, node):
         if isinstance(node.value, str):
@@ -104,3 +118,6 @@ class Transpiler:
             index = self.visit(node.key)
             return f'{obj}[{index}]'
 
+    def visit_LambdaFunction(self, node):
+        params = ', '.join(node.params)
+        return f"lambda {params}: {self.visit(node.expression)}"

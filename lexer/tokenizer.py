@@ -6,6 +6,7 @@ TOKEN_SPEC = [
     ('STRING', r'(["\'])(?:\\.|[^\\])*?\1'),
     ('VAR', r'\bvar\b'),
     ('FUNCTION', r'\bfunction\b'),
+    ('ARROW', r'=>'),
     ('RETURN', r'\breturn\b'),
     ('IF', r'\bif\b'),
     ('ELSE', r'\belse\b'),
