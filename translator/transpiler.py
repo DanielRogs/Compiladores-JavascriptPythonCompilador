@@ -121,3 +121,17 @@ class Transpiler:
     def visit_LambdaFunction(self, node):
         params = ', '.join(node.params)
         return f"lambda {params}: {self.visit(node.expression)}"
+
+    def visit_ForEachStatement(self, node):
+        iterable_code = self.visit(node.iterable)
+
+        if node.kind == 'in':
+            loop = f"for {node.var} in {iterable_code}:"
+        else:  # 'of'
+            loop = f"for {node.var} in {iterable_code}:"
+
+        body_lines = []
+        for stmt in node.body.statements:
+            body_lines.append("    " + self.visit(stmt))
+
+        return loop + "\n" + "\n".join(body_lines)

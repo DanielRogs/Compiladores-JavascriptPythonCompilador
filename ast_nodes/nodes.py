@@ -73,3 +73,10 @@ class LambdaFunction:
     def __init__(self, params, expression):
         self.params = params
         self.expression = expression
+
+class ForEachStatement:
+    def __init__(self, var, iterable, body, kind='of'):
+        self.var = var
+        self.iterable = iterable
+        self.body = body
+        self.kind = kind

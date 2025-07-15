@@ -3,7 +3,8 @@ from ast_nodes.nodes import (
     Program, VariableDeclaration, Literal, Identifier,
     BinaryOp, ConsoleLog, IfStatement, WhileStatement,
     Block, FunctionDeclaration, ReturnStatement, FunctionCall, 
-    ArrayLiteral, ObjectLiteral, MemberAccess, LambdaFunction
+    ArrayLiteral, ObjectLiteral, MemberAccess, LambdaFunction,
+    ForEachStatement
 )
 
 class Parser:
@@ -52,6 +53,8 @@ class Parser:
                 return self.parse_function_call_statement()
             else:
                 return self.parse_assignment()
+        elif token.type == 'FOR':
+            return self.parse_for_each()
         else:
             raise SyntaxError(f"Token inesperado: {token}")
 
@@ -270,6 +273,31 @@ class Parser:
         else:
             expr = self.parse_expression()
             return LambdaFunction(params, expr)
+
+    def parse_for_each(self):
+        self.eat('FOR')
+        self.eat('LPAREN')
+
+        # Ex: var x in arr  ou  var x of arr
+        if self.current_token().type == 'VAR':
+            self.eat('VAR')
+        var_name = self.eat('IDENTIFIER').value
+
+        kind_token = self.current_token()
+        if kind_token.type == 'IN':
+            self.eat('IN')
+            kind = 'in'
+        elif kind_token.type == 'OF':
+            self.eat('OF')
+            kind = 'of'
+        else:
+            raise SyntaxError(f"Esperado 'in' ou 'of', encontrado: {kind_token}")
+
+        iterable = self.parse_expression()
+        self.eat('RPAREN')
+
+        body = self.parse_block()
+        return ForEachStatement(var_name, iterable, body, kind)
 
     def parse_primary(self):
         token = self.current_token()

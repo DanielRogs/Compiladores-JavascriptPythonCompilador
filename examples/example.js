@@ -2,10 +2,14 @@ console.log("This is an example JavaScript code snippet.");
 
 // Isto é um exemplo de comentário em JavaScript
 
-var x = [1, 2, 3];
+var obj = { a: 1, b: 2 };
+for (var key in obj) {
+  console.log(key);
+}
 
-for (var i in x) {
-  console.log("Index: " + i + ", Value: " + x[i]);
+var arr = [10, 20, 30];
+for (var item of arr) {
+  console.log(item);
 }
 
 var y = 20 + 15;
