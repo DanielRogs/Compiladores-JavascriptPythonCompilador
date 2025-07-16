@@ -9,6 +9,8 @@ TOKEN_SPEC = [
     ('CLASS', r'\bclass\b'),
     ('CONSTRUCTOR', r'\bconstructor\b'),
     ('VAR', r'\bvar\b'),
+    ('LET', r'\blet\b'),
+    ('CONST', r'\bconst\b'),
     ('FUNCTION', r'\bfunction\b'),
     ('ARROW', r'=>'),
     ('FOR', r'for'),
