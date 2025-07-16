@@ -42,3 +42,13 @@ function eqStrict(a, b) {
 function neqStrict(a, b) {
   return a !== b;
 }
+
+var x = true && false;
+var y = true || false;
+console.log(x);
+console.log(y);
+
+let a = 10;
+const PI = 3.14;
+var b = a + PI;
+console.log(b);
