@@ -145,3 +145,62 @@ class Transpiler:
 
     def visit_Comment(self, node):
         return f"# {node.text}"
+
+    def visit_ClassDeclaration(self, node):
+        class_code = f"class {node.name}:"
+        
+        # Se não há constructor nem métodos, criar um corpo vazio
+        if not node.constructor and not node.methods:
+            class_code += "\n    pass"
+        else:
+            # Adicionar constructor se existir
+            if node.constructor:
+                constructor_code = self.visit_ConstructorDeclaration(node.constructor)
+                class_code += f"\n{self._indent(constructor_code)}"
+            
+            # Adicionar métodos
+            for method in node.methods:
+                method_code = self.visit_MethodDeclaration(method)
+                class_code += f"\n{self._indent(method_code)}"
+        
+        return class_code
+    
+    def visit_ConstructorDeclaration(self, node):
+        # Em Python, o constructor é o método __init__
+        params = ['self'] + node.params  # Adiciona 'self' como primeiro parâmetro
+        params_str = ', '.join(params)
+        body = self.visit(node.body)
+        
+        # Se o corpo está vazio, adicionar pass
+        if not body.strip():
+            body = "pass"
+        
+        return f"def __init__({params_str}):\n{self._indent(body)}"
+    
+    def visit_MethodDeclaration(self, node):
+        # Em Python, métodos sempre têm 'self' como primeiro parâmetro
+        params = ['self'] + node.params
+        params_str = ', '.join(params)
+        body = self.visit(node.body)
+        
+        # Se o corpo está vazio, adicionar pass
+        if not body.strip():
+            body = "pass"
+        
+        return f"def {node.name}({params_str}):\n{self._indent(body)}"
+
+    def visit_NewExpression(self, node):
+        args = ", ".join([self.visit(arg) for arg in node.arguments])
+        return f"{node.class_name}({args})"
+
+    def visit_ThisExpression(self, node):
+        return "self"
+
+    def visit_PropertyAccess(self, node):
+        obj = self.visit(node.object)
+        return f"{obj}.{node.property_name}"
+
+    def visit_MethodCall(self, node):
+        obj = self.visit(node.object)
+        args = ", ".join([self.visit(arg) for arg in node.arguments])
+        return f"{obj}.{node.method_name}({args})"

@@ -4,7 +4,8 @@ from ast_nodes.nodes import (
     BinaryOp, ConsoleLog, IfStatement, WhileStatement,
     Block, FunctionDeclaration, ReturnStatement, FunctionCall, 
     ArrayLiteral, ObjectLiteral, MemberAccess, LambdaFunction,
-    ForEachStatement, Comment
+    ForEachStatement, Comment, ClassDeclaration, ConstructorDeclaration,
+    MethodDeclaration, NewExpression, ThisExpression, PropertyAccess, MethodCall
 )
 
 class Parser:
@@ -35,6 +36,8 @@ class Parser:
         token = self.current_token()
         if token.type == 'COMMENT':
             return self.parse_comment()
+        elif token.type == 'CLASS':
+            return self.parse_class_declaration()
         elif token.type == 'VAR':
             return self.parse_variable_declaration()
         elif token.type == 'CONSOLE':
@@ -47,12 +50,18 @@ class Parser:
             return self.parse_function_declaration()
         elif token.type == 'RETURN':
             return self.parse_return_statement()
+        elif token.type == 'THIS':
+            # this.propriedade = valor
+            return self.parse_this_assignment()
         elif token.type == 'IDENTIFIER':
             # Pode ser chamada de função ou atribuição simples
             # Vamos tentar chamar função primeiro
             next_token = self.tokens[self.pos + 1] if self.pos + 1 < len(self.tokens) else None
             if next_token and next_token.type == 'LPAREN':
                 return self.parse_function_call_statement()
+            elif next_token and next_token.type == 'DOT':
+                # obj.metodo() ou obj.propriedade = valor
+                return self.parse_object_method_or_assignment()
             else:
                 return self.parse_assignment()
         elif token.type == 'FOR':
@@ -309,7 +318,34 @@ class Parser:
 
     def parse_primary(self):
         token = self.current_token()
-        if token.type == 'NUMBER':
+        if token.type == 'NEW':
+            return self.parse_new_expression()
+        elif token.type == 'THIS':
+            self.eat('THIS')
+            node = ThisExpression()
+            
+            # Tratar this.propriedade ou this.metodo()
+            while self.current_token() and self.current_token().type == 'DOT':
+                self.eat('DOT')
+                property_name = self.eat('IDENTIFIER').value
+                
+                # Verificar se é chamada de método this.metodo()
+                if self.current_token() and self.current_token().type == 'LPAREN':
+                    self.eat('LPAREN')
+                    args = []
+                    if self.current_token() and self.current_token().type != 'RPAREN':
+                        args.append(self.parse_expression())
+                        while self.current_token() and self.current_token().type == 'COMMA':
+                            self.eat('COMMA')
+                            args.append(self.parse_expression())
+                    self.eat('RPAREN')
+                    node = MethodCall(node, property_name, args)
+                else:
+                    # É acesso a propriedade this.propriedade
+                    node = PropertyAccess(node, property_name)
+            
+            return node
+        elif token.type == 'NUMBER':
             self.eat('NUMBER')
             value = float(token.value) if '.' in token.value else int(token.value)
             return Literal(value)
@@ -327,12 +363,27 @@ class Parser:
             node = Identifier(token.value)
             self.eat('IDENTIFIER')
 
-            # Tratamento de acessos: obj.prop ou arr[0]
+            # Tratamento de acessos: obj.prop, obj.metodo() ou arr[0]
             while self.current_token() and self.current_token().type in ('DOT', 'LBRACKET'):
                 if self.current_token().type == 'DOT':
                     self.eat('DOT')
-                    key = self.eat('IDENTIFIER').value
-                    node = MemberAccess(node, Literal(key), is_dot=True)
+                    property_name = self.eat('IDENTIFIER').value
+                    
+                    # Verificar se é chamada de método obj.metodo()
+                    if self.current_token() and self.current_token().type == 'LPAREN':
+                        self.eat('LPAREN')
+                        args = []
+                        if self.current_token() and self.current_token().type != 'RPAREN':
+                            args.append(self.parse_expression())
+                            while self.current_token() and self.current_token().type == 'COMMA':
+                                self.eat('COMMA')
+                                args.append(self.parse_expression())
+                        self.eat('RPAREN')
+                        node = MethodCall(node, property_name, args)
+                    else:
+                        # É acesso a propriedade obj.propriedade
+                        node = PropertyAccess(node, property_name)
+                        
                 elif self.current_token().type == 'LBRACKET':
                     self.eat('LBRACKET')
                     index = self.parse_expression()
@@ -350,3 +401,139 @@ class Parser:
             return self.parse_object()
         else:
             raise SyntaxError(f"Token inesperado em expressão: {token}")
+
+    def parse_new_expression(self):
+        self.eat('NEW')
+        class_name = self.eat('IDENTIFIER').value
+        self.eat('LPAREN')
+        
+        args = []
+        if self.current_token() and self.current_token().type != 'RPAREN':
+            args.append(self.parse_expression())
+            while self.current_token() and self.current_token().type == 'COMMA':
+                self.eat('COMMA')
+                args.append(self.parse_expression())
+        
+        self.eat('RPAREN')
+        return NewExpression(class_name, args)
+
+    def parse_this_assignment(self):
+        # this.propriedade = valor OU this.metodo()
+        self.eat('THIS')
+        self.eat('DOT')
+        property_name = self.eat('IDENTIFIER').value
+        
+        if self.current_token() and self.current_token().type == 'LPAREN':
+            # É uma chamada de método: this.metodo()
+            self.eat('LPAREN')
+            args = []
+            if self.current_token() and self.current_token().type != 'RPAREN':
+                args.append(self.parse_expression())
+                while self.current_token() and self.current_token().type == 'COMMA':
+                    self.eat('COMMA')
+                    args.append(self.parse_expression())
+            self.eat('RPAREN')
+            self.eat('SEMICOLON')
+            
+            this_obj = ThisExpression()
+            return MethodCall(this_obj, property_name, args)
+        elif self.current_token() and self.current_token().type == 'OP_ASSIGN':
+            # É uma atribuição: this.propriedade = valor
+            self.eat('OP_ASSIGN')
+            value = self.parse_expression()
+            self.eat('SEMICOLON')
+            
+            # Criar um nó de atribuição para this.propriedade
+            return VariableDeclaration(f"self.{property_name}", value)
+        else:
+            raise SyntaxError(f"Esperado '(' ou '=' após this.{property_name}, encontrado {self.current_token()}")
+
+    def parse_object_method_or_assignment(self):
+        # obj.metodo() ou obj.propriedade = valor
+        obj_name = self.eat('IDENTIFIER').value
+        self.eat('DOT')
+        property_name = self.eat('IDENTIFIER').value
+        
+        if self.current_token() and self.current_token().type == 'LPAREN':
+            # É uma chamada de método: obj.metodo()
+            self.eat('LPAREN')
+            args = []
+            if self.current_token() and self.current_token().type != 'RPAREN':
+                args.append(self.parse_expression())
+                while self.current_token() and self.current_token().type == 'COMMA':
+                    self.eat('COMMA')
+                    args.append(self.parse_expression())
+            self.eat('RPAREN')
+            self.eat('SEMICOLON')
+            
+            obj = Identifier(obj_name)
+            return MethodCall(obj, property_name, args)
+        elif self.current_token() and self.current_token().type == 'OP_ASSIGN':
+            # É uma atribuição: obj.propriedade = valor
+            self.eat('OP_ASSIGN')
+            value = self.parse_expression()
+            self.eat('SEMICOLON')
+            
+            # Criar atribuição para propriedade do objeto
+            return VariableDeclaration(f"{obj_name}.{property_name}", value)
+        else:
+            # Se não for nem chamada nem atribuição, pode ser um erro
+            raise SyntaxError(f"Esperado '(' ou '=' após {obj_name}.{property_name}, encontrado {self.current_token()}")
+
+    def parse_class_declaration(self):
+        self.eat('CLASS')
+        class_name = self.eat('IDENTIFIER').value
+        self.eat('LBRACE')
+        
+        constructor = None
+        methods = []
+        
+        while self.current_token() and self.current_token().type != 'RBRACE':
+            token = self.current_token()
+            
+            if token.type == 'CONSTRUCTOR':
+                constructor = self.parse_constructor()
+            elif token.type == 'IDENTIFIER':
+                # Método da classe
+                method = self.parse_method()
+                methods.append(method)
+            elif token.type == 'COMMENT':
+                # Ignorar comentários dentro da classe por enquanto
+                self.eat('COMMENT')
+            else:
+                raise SyntaxError(f"Token inesperado dentro da classe: {token}")
+        
+        self.eat('RBRACE')
+        return ClassDeclaration(class_name, constructor, methods)
+    
+    def parse_constructor(self):
+        self.eat('CONSTRUCTOR')
+        self.eat('LPAREN')
+        
+        params = []
+        if self.current_token() and self.current_token().type != 'RPAREN':
+            params.append(self.eat('IDENTIFIER').value)
+            while self.current_token() and self.current_token().type == 'COMMA':
+                self.eat('COMMA')
+                params.append(self.eat('IDENTIFIER').value)
+        
+        self.eat('RPAREN')
+        body = self.parse_block()
+        
+        return ConstructorDeclaration(params, body)
+    
+    def parse_method(self):
+        method_name = self.eat('IDENTIFIER').value
+        self.eat('LPAREN')
+        
+        params = []
+        if self.current_token() and self.current_token().type != 'RPAREN':
+            params.append(self.eat('IDENTIFIER').value)
+            while self.current_token() and self.current_token().type == 'COMMA':
+                self.eat('COMMA')
+                params.append(self.eat('IDENTIFIER').value)
+        
+        self.eat('RPAREN')
+        body = self.parse_block()
+        
+        return MethodDeclaration(method_name, params, body)
