@@ -56,7 +56,9 @@ class Transpiler:
             '===': '==',  # JS strict equals -> Python equals
             '!==': '!=',  # JS strict not equals -> Python not equals
             '==':  '==',  # JS loose equals -> Python equals (semântica diferente!)
-            '!=':  '!='   # JS loose not equals -> Python not equals (semântica diferente!)
+            '!=':  '!=',  # JS loose not equals -> Python not equals (semântica diferente!)
+            '&&': 'and', 
+            '||': 'or' 
         }
         
         if node.op in op_map:

@@ -32,6 +32,8 @@ TOKEN_SPEC = [
     ('EQ', r'=='),
     ('NEQ', r'!='),
     ('OP_ASSIGN', r'='),
+    ('LOGICAL_AND', r'&&'),
+    ('LOGICAL_OR', r'\|\|'),
     ('OP_PLUS', r'\+'),
     ('OP_MINUS', r'-'),
     ('OP_MUL', r'\*'),
