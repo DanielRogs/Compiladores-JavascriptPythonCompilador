@@ -4,7 +4,8 @@ from ast_nodes.nodes import (
     BinaryOp, ConsoleLog, IfStatement, WhileStatement,
     Block, FunctionDeclaration, ReturnStatement, FunctionCall, 
     ArrayLiteral, ObjectLiteral, MemberAccess, LambdaFunction,
-    ForEachStatement, Comment
+    ForEachStatement, Comment, ClassDeclaration, ConstructorDeclaration,
+    MethodDeclaration
 )
 
 class Parser:
@@ -35,6 +36,8 @@ class Parser:
         token = self.current_token()
         if token.type == 'COMMENT':
             return self.parse_comment()
+        elif token.type == 'CLASS':
+            return self.parse_class_declaration()
         elif token.type == 'VAR':
             return self.parse_variable_declaration()
         elif token.type == 'CONSOLE':
@@ -350,3 +353,61 @@ class Parser:
             return self.parse_object()
         else:
             raise SyntaxError(f"Token inesperado em expressão: {token}")
+
+    def parse_class_declaration(self):
+        self.eat('CLASS')
+        class_name = self.eat('IDENTIFIER').value
+        self.eat('LBRACE')
+        
+        constructor = None
+        methods = []
+        
+        while self.current_token() and self.current_token().type != 'RBRACE':
+            token = self.current_token()
+            
+            if token.type == 'CONSTRUCTOR':
+                constructor = self.parse_constructor()
+            elif token.type == 'IDENTIFIER':
+                # Método da classe
+                method = self.parse_method()
+                methods.append(method)
+            elif token.type == 'COMMENT':
+                # Ignorar comentários dentro da classe por enquanto
+                self.eat('COMMENT')
+            else:
+                raise SyntaxError(f"Token inesperado dentro da classe: {token}")
+        
+        self.eat('RBRACE')
+        return ClassDeclaration(class_name, constructor, methods)
+    
+    def parse_constructor(self):
+        self.eat('CONSTRUCTOR')
+        self.eat('LPAREN')
+        
+        params = []
+        if self.current_token() and self.current_token().type != 'RPAREN':
+            params.append(self.eat('IDENTIFIER').value)
+            while self.current_token() and self.current_token().type == 'COMMA':
+                self.eat('COMMA')
+                params.append(self.eat('IDENTIFIER').value)
+        
+        self.eat('RPAREN')
+        body = self.parse_block()
+        
+        return ConstructorDeclaration(params, body)
+    
+    def parse_method(self):
+        method_name = self.eat('IDENTIFIER').value
+        self.eat('LPAREN')
+        
+        params = []
+        if self.current_token() and self.current_token().type != 'RPAREN':
+            params.append(self.eat('IDENTIFIER').value)
+            while self.current_token() and self.current_token().type == 'COMMA':
+                self.eat('COMMA')
+                params.append(self.eat('IDENTIFIER').value)
+        
+        self.eat('RPAREN')
+        body = self.parse_block()
+        
+        return MethodDeclaration(method_name, params, body)

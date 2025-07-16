@@ -84,3 +84,20 @@ class ForEachStatement:
 class Comment:
     def __init__(self, text):
         self.text = text
+
+class ClassDeclaration:
+    def __init__(self, name, constructor=None, methods=None):
+        self.name = name
+        self.constructor = constructor  # ConstructorDeclaration
+        self.methods = methods or []    # lista de FunctionDeclaration
+
+class ConstructorDeclaration:
+    def __init__(self, params, body):
+        self.params = params
+        self.body = body
+
+class MethodDeclaration:
+    def __init__(self, name, params, body):
+        self.name = name
+        self.params = params
+        self.body = body

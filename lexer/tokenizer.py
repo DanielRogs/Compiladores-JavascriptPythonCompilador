@@ -4,6 +4,8 @@ TOKEN_SPEC = [
     ('COMMENT', r'//.*'),  # Ignorar comentários
     ('NUMBER', r'\d+(\.\d+)?'),
     ('STRING', r'(["\'])(?:\\.|[^\\])*?\1'),
+    ('CLASS', r'\bclass\b'),
+    ('CONSTRUCTOR', r'\bconstructor\b'),
     ('VAR', r'\bvar\b'),
     ('FUNCTION', r'\bfunction\b'),
     ('ARROW', r'=>'),
