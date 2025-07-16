@@ -142,3 +142,6 @@ class Transpiler:
         loop_header = f"for {node.var} in {iterable}:"
 
         return f"{loop_header}\n{self._indent(body)}"
+
+    def visit_Comment(self, node):
+        return f"# {node.text}"

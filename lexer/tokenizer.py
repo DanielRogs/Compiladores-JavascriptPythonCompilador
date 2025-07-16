@@ -18,7 +18,7 @@ TOKEN_SPEC = [
     ('LOG', r'log'),
     ('TRUE', r'\btrue\b'),
     ('FALSE', r'\bfalse\b'),
-    ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
+    ('IDENTIFIER', r'[a-zA-Z_\u00C0-\u017F][a-zA-Z0-9_\u00C0-\u017F]*'),  # Suporte a acentos
     ('OP_INCREMENT', r'\+\+'),
     ('OP_DECREMENT', r'--'),
     ('OP_PLUSEQ', r'\+='),
@@ -65,7 +65,7 @@ def tokenize(code):
             pattern = re.compile(token_regex)
             match = pattern.match(code, pos)
             if match:
-                if token_name not in ['WHITESPACE', 'COMMENT']:
+                if token_name not in ['WHITESPACE']:  # Agora vamos capturar comentários
                     tokens.append(Token(token_name, match.group(0)))
                 pos = match.end(0)
                 break

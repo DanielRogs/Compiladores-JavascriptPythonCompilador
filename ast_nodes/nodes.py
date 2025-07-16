@@ -80,3 +80,7 @@ class ForEachStatement:
         self.iterable = iterable
         self.body = body
         self.kind = kind
+
+class Comment:
+    def __init__(self, text):
+        self.text = text

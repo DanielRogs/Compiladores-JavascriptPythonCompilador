@@ -4,7 +4,7 @@ from ast_nodes.nodes import (
     BinaryOp, ConsoleLog, IfStatement, WhileStatement,
     Block, FunctionDeclaration, ReturnStatement, FunctionCall, 
     ArrayLiteral, ObjectLiteral, MemberAccess, LambdaFunction,
-    ForEachStatement
+    ForEachStatement, Comment
 )
 
 class Parser:
@@ -33,7 +33,9 @@ class Parser:
 
     def parse_statement(self):
         token = self.current_token()
-        if token.type == 'VAR':
+        if token.type == 'COMMENT':
+            return self.parse_comment()
+        elif token.type == 'VAR':
             return self.parse_variable_declaration()
         elif token.type == 'CONSOLE':
             return self.parse_console_log()
@@ -57,6 +59,12 @@ class Parser:
             return self.parse_for_each()
         else:
             raise SyntaxError(f"Token inesperado: {token}")
+
+    def parse_comment(self):
+        token = self.eat('COMMENT')
+        # Remove o "//" do início do comentário
+        comment_text = token.value[2:].strip()
+        return Comment(comment_text)
 
     def parse_variable_declaration(self):
             self.eat('VAR')

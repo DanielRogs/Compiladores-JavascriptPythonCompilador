@@ -7,7 +7,7 @@ def main():
         print("Uso: python main.py <arquivo_entrada.js>")
         return
 
-    with open(sys.argv[1], 'r') as f:
+    with open(sys.argv[1], 'r', encoding='utf-8') as f:
         code = f.read()
 
     try:
