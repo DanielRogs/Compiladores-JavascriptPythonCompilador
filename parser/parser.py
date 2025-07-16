@@ -537,3 +537,33 @@ class Parser:
         body = self.parse_block()
         
         return MethodDeclaration(method_name, params, body)
+
+    def parse_expression(self):
+        return self.parse_logical_or()
+
+    def parse_logical_or(self):
+        node = self.parse_logical_and()
+        while self.current_token() and self.current_token().type == 'LOGICAL_OR':
+            op_token = self.eat('LOGICAL_OR')
+            right = self.parse_logical_and()
+            node = BinaryOp(node, op_token.value, right)
+        return node
+
+    def parse_logical_and(self):
+        node = self.parse_comparison()
+        while self.current_token() and self.current_token().type == 'LOGICAL_AND':
+            op_token = self.eat('LOGICAL_AND')
+            right = self.parse_comparison()
+            node = BinaryOp(node, op_token.value, right)
+        return node
+
+    def parse_comparison(self):
+        node = self.parse_add_sub()
+        while self.current_token() and self.current_token().type in (
+            'GT', 'LT', 'GTE', 'LTE', 'EQ', 'NEQ', 'EQ_STRICT', 'NEQ_STRICT'
+        ):
+            op_token = self.eat(self.current_token().type)
+            right = self.parse_add_sub()
+            node = BinaryOp(node, op_token.value, right)
+        return node
+
