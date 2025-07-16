@@ -188,3 +188,19 @@ class Transpiler:
             body = "pass"
         
         return f"def {node.name}({params_str}):\n{self._indent(body)}"
+
+    def visit_NewExpression(self, node):
+        args = ", ".join([self.visit(arg) for arg in node.arguments])
+        return f"{node.class_name}({args})"
+
+    def visit_ThisExpression(self, node):
+        return "self"
+
+    def visit_PropertyAccess(self, node):
+        obj = self.visit(node.object)
+        return f"{obj}.{node.property_name}"
+
+    def visit_MethodCall(self, node):
+        obj = self.visit(node.object)
+        args = ", ".join([self.visit(arg) for arg in node.arguments])
+        return f"{obj}.{node.method_name}({args})"

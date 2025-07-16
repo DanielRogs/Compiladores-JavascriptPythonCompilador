@@ -101,3 +101,23 @@ class MethodDeclaration:
         self.name = name
         self.params = params
         self.body = body
+
+class NewExpression:
+    def __init__(self, class_name, arguments):
+        self.class_name = class_name
+        self.arguments = arguments
+
+class ThisExpression:
+    def __init__(self):
+        pass
+
+class PropertyAccess:
+    def __init__(self, object_, property_name):
+        self.object = object_
+        self.property_name = property_name
+
+class MethodCall:
+    def __init__(self, object_, method_name, arguments):
+        self.object = object_
+        self.method_name = method_name
+        self.arguments = arguments
