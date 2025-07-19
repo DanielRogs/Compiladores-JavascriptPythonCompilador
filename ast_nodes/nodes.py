@@ -121,3 +121,9 @@ class MethodCall:
         self.object = object_
         self.method_name = method_name
         self.arguments = arguments
+
+class VariableDeclaration:
+    def __init__(self, name, value, kind='var'):  
+        self.name = name
+        self.value = value
+        self.kind = kind
